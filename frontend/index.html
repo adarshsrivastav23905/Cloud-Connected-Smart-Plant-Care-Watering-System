@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Smart Plant Care Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+      :root {
+        --bg: #f4f7f1;
+        --panel: #ffffff;
+        --primary: #2e7d32;
+        --accent: #a5d6a7;
+        --dark: #1b2a1b;
+        --text: #2d3a2d;
+        --warn: #f9a825;
+        --danger: #d32f2f;
+        --shadow: 0 12px 30px rgba(26, 62, 22, 0.08);
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        font-family: Arial, sans-serif;
+        background: linear-gradient(135deg, #edf5ea, #eff9f0);
+        color: var(--text);
+      }
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 24px;
+      }
+      .header {
+        display: flex; justify-content: space-between; align-items: center; margin-bottom: 22px;
+      }
+      .card-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 18px; }
+      .card {
+        background: var(--panel);
+        border-radius: 16px;
+        padding: 18px 20px;
+        box-shadow: var(--shadow);
+      }
+      .kpi { font-size: 2rem; font-weight: 700; color: var(--primary); }
+      .tag {
+        display: inline-block; padding: 6px 10px; border-radius: 999px; font-size: 12px; font-weight: bold;
+        background: var(--accent); color: var(--dark);
+      }
+      .warn { background: #fff3cd; color: #8a6d3b; }
+      .danger { background: #f8d7da; color: #842029; }
+      canvas { max-height: 300px; }
+      .table-wrap { overflow-x: auto; }
+      table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+      th, td { text-align: left; padding: 12px 10px; border-bottom: 1px solid #edf0ee; }
+      .controls { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 14px; }
+      button {
+        border: none; border-radius: 10px; cursor: pointer; font-size: 15px; padding: 10px 16px;
+        background: var(--primary); color: white;
+      }
+      .secondary { background: #6aa96d; }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <div>
+          <h1>Cloud-Connected Smart Plant Care</h1>
+          <div>Remote irrigation and plant monitoring dashboard</div>
+        </div>
+        <div class="tag" id="status-badge">System OK</div>
+      </div>
+
+      <div class="card-grid">
+        <div class="card">
+          <div>Soil Moisture</div>
+          <div class="kpi" id="soil-value">--</div>
+          <div>Target: <span id="threshold-value">--</span>%</div>
+        </div>
+        <div class="card">
+          <div>Temperature</div>
+          <div class="kpi" id="temp-value">--</div>
+          <div>°C</div>
+        </div>
+        <div class="card">
+          <div>Humidity</div>
+          <div class="kpi" id="humidity-value">--</div>
+          <div>%</div>
+        </div>
+        <div class="card">
+          <div>Light Level</div>
+          <div class="kpi" id="light-value">--</div>
+          <div>%</div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top: 18px;">
+        <h3>Recent Plant Health</h3>
+        <canvas id="chart"></canvas>
+      </div>
+
+      <div class="controls">
+        <button id="refresh-btn">Refresh data</button>
+        <button id="water-btn" class="secondary">Manually water</button>
+      </div>
+
+      <div class="card" style="margin-top: 18px;">
+        <h3>Alerts</h3>
+        <div id="alerts-list">No alerts yet.</div>
+      </div>
+
+      <div class="card" style="margin-top: 18px;">
+        <h3>Recent sensor readings</h3>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Time</th>
+                <th>Moisture</th>
+                <th>Temp</th>
+                <th>Humidity</th>
+                <th>Light</th>
+              </tr>
+            </thead>
+            <tbody id="readings-table"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const API = 'http://localhost:8000/api/v1';
+      const DEVICE_ID = 'PLANT-001';
+
+      async function fetchJson(url) {
+        const response = await fetch(url);
+        if (!response.ok) throw new Error('Request failed');
+        return response.json();
+      }
+
+      async function loadDashboard() {
+        try {
+          const summary = await fetchJson(`${API}/dashboard/${DEVICE_ID}`);
+          const latest = summary.latest_reading;
+          const readings = summary.recent_readings || [];
+
+          if (latest) {
+            document.getElementById('soil-value').textContent = latest.soil_moisture.toFixed(1) + '%';
+            document.getElementById('temp-value').textContent = latest.temperature.toFixed(1);
+            document.getElementById('humidity-value').textContent = latest.humidity.toFixed(1) + '%';
+            document.getElementById('light-value').textContent = (latest.light_level ?? 0).toFixed(1) + '%';
+          }
+
+          document.getElementById('threshold-value').textContent = summary.device?.moisture_threshold ?? '--';
+          const badge = document.getElementById('status-badge');
+          badge.textContent = summary.watering_required ? 'Needs Water' : 'System OK';
+          badge.className = summary.watering_required ? 'tag warn' : 'tag';
+
+          const alertsList = document.getElementById('alerts-list');
+          const alerts = await fetchJson(`${API}/alerts/${DEVICE_ID}`);
+          if (alerts.length) {
+            alertsList.innerHTML = alerts.slice(0, 5).map(a => `<div class="card" style="margin-top:8px;"><strong>${a.alert_type}</strong><div>${a.message}</div></div>`).join('');
+          } else {
+            alertsList.textContent = 'No alerts yet.';
+          }
+
+          const table = document.getElementById('readings-table');
+          table.innerHTML = readings.map(r => `
+            <tr>
+              <td>${new Date(r.timestamp).toLocaleString()}</td>
+              <td>${r.soil_moisture}%</td>
+              <td>${r.temperature}°C</td>
+              <td>${r.humidity}%</td>
+              <td>${r.light_level ?? 0}%</td>
+            </tr>
+          `).join('');
+
+          renderChart(readings.slice().reverse());
+        } catch (error) {
+          console.error(error);
+          document.getElementById('status-badge').textContent = 'API unavailable';
+          document.getElementById('status-badge').className = 'tag danger';
+        }
+      }
+
+      function renderChart(readings) {
+        const labels = readings.map(r => new Date(r.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
+        const values = readings.map(r => r.soil_moisture);
+        const ctx = document.getElementById('chart').getContext('2d');
+
+        if (window.chartInstance) {
+          window.chartInstance.destroy();
+        }
+
+        window.chartInstance = new Chart(ctx, {
+          type: 'line',
+          data: {
+            labels,
+            datasets: [{
+              label: 'Soil Moisture %',
+              data: values,
+              borderColor: '#2e7d32',
+              backgroundColor: 'rgba(46,125,50,0.15)',
+              fill: true,
+              tension: 0.35
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: { y: { min: 0, max: 100 } }
+          }
+        });
+      }
+
+      document.getElementById('refresh-btn').addEventListener('click', loadDashboard);
+      document.getElementById('water-btn').addEventListener('click', async () => {
+        await fetch(`${API}/watering-events`, {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({
+            device_id: DEVICE_ID,
+            trigger_type: 'manual',
+            moisture_before: 25,
+            moisture_after: 60,
+            duration_seconds: 15,
+            timestamp: new Date().toISOString()
+          })
+        });
+        loadDashboard();
+      });
+
+      loadDashboard();
+      setInterval(loadDashboard, 15000);
+    </script>
+  </body>
+</html>
