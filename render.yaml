@@ -2,6 +2,7 @@ services:
   - type: web
     name: smart-plant-api
     runtime: docker
+    plan: free
     dockerContext: ./backend
     dockerfilePath: ./backend/Dockerfile
     healthCheckPath: /api/v1/health
