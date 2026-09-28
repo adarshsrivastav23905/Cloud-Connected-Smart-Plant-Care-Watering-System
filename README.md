@@ -61,7 +61,7 @@ The simulator creates `PLANT-001`, sends a reading every 10 seconds, and writes 
 
 ## Deploy to Render
 
-The [`render.yaml`](render.yaml) Blueprint creates a Docker API service and a static React dashboard. Because the API needs persistent cloud storage, set up Supabase first, then deploy the Blueprint from your GitHub repository in Render:
+The [`verdant.yaml`](verdant.yaml) Blueprint creates a Docker API service and a static React dashboard. In Render's Blueprint form, enter `verdant.yaml` as the Blueprint path. Because the API needs persistent cloud storage, set up Supabase first, then deploy the Blueprint from your GitHub repository in Render:
 
 1. Set the API service's `DATABASE_URL` to the Supabase PostgreSQL connection URL (use the TLS URL).
 2. Set `CORS_ORIGINS` to the deployed dashboard URL, e.g. `https://smart-plant-dashboard.onrender.com`.

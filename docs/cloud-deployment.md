@@ -15,7 +15,7 @@ The backend rewrites `postgresql://` to `postgresql+psycopg://`; psycopg 3 is in
 
 ## Render deployment
 
-`render.yaml` defines a Render Blueprint containing a Docker web service for FastAPI and a static site for the React app. Before the app can be deployed successfully:
+`verdant.yaml` defines a Render Blueprint containing a Docker web service for FastAPI and a static site for the React app. Enter `verdant.yaml` in the Blueprint Path field. Before the app can be deployed successfully:
 
 1. Create a Supabase project and run `supabase/schema.sql`.
 2. Connect the GitHub repository to Render and deploy its Blueprint.

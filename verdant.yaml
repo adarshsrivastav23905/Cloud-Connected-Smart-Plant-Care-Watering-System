@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: smart-plant-api
+    name: verdant-api
     runtime: docker
     plan: free
     dockerContext: ./backend
@@ -13,7 +13,7 @@ services:
         sync: false
 
   - type: web
-    name: smart-plant-dashboard
+    name: verdant-dashboard
     runtime: static
     rootDir: frontend/react-app
     buildCommand: npm ci && npm run build
