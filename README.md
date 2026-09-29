@@ -17,7 +17,7 @@ The React dashboard includes plant/device selection, live metric cards, moisture
 
 The screenshot above shows the local dashboard populated with synthetic readings from the running API.
 
-## Architecture
+## Architecture.    
 
 ```mermaid
 flowchart LR
