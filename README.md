@@ -1,79 +1,104 @@
-# Cloud-Connected Smart Plant Care & Watering System
+# 🌱 Cloud-Connected Smart Plant Care & Watering System
 
-![Python](https://img.shields.io/badge/Python-3.12+-3776AB?logo=python&logoColor=white)
-![React](https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=111)
-![FastAPI](https://img.shields.io/badge/API-FastAPI-009688?logo=fastapi&logoColor=white)
-![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white)
+[![Architecture](https://img.shields.io/badge/Architecture-IoT%20%2B%20Cloud-397a68.svg)](docs/cloud-deployment.md)
+[![Backend](https://img.shields.io/badge/Backend-FastAPI-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
+[![Frontend](https://img.shields.io/badge/Frontend-React%2018%20%7C%20TypeScript-3178C6?logo=react&logoColor=white)](https://react.dev/)
+[![Database](https://img.shields.io/badge/Database-SQLite%20%7C%20Supabase%20PostgreSQL-3ECF8E?logo=supabase&logoColor=white)](https://supabase.com/)
+[![Containers](https://img.shields.io/badge/Containers-Docker%20Compose-2496ED?logo=docker&logoColor=white)](https://docs.docker.com/compose/)
 
-A portfolio-ready IoT/cloud demo that simulates plant sensors, stores time-series readings, evaluates irrigation rules, and presents a remote monitoring dashboard. It runs locally without hardware and can use Supabase-hosted PostgreSQL when you want a cloud database.
+> **Course:** Cloud Computing · **Project:** IoT-based plant monitoring and virtual watering · **Deployment:** Local Docker Compose, with optional Render and Supabase cloud services
 
-> All readings and watering actions in the default setup are synthetic/virtual. No physical pump is controlled.
+## 📌 Executive Summary
 
-## Dashboard
+Plant care can be difficult to manage consistently, especially when growing conditions are not visible remotely. This project demonstrates an IoT-to-cloud workflow that simulates plant sensor readings, sends them to a REST API, stores time-series data, and evaluates moisture thresholds. A React dashboard presents current conditions, history, alerts, and virtual watering activity.
 
-The React dashboard includes plant/device selection, live metric cards, moisture history, threshold editing, automatic watering status, alerts, and watering-event history.
+The complete demo runs locally without physical hardware. SQLite is used by default, and Supabase-hosted PostgreSQL is available for cloud persistence.
 
-![React dashboard showing sensor metrics, moisture history, alerts, and virtual watering activity](docs/screenshots/dashboard.png)
+> **Demo scope:** Sensor readings are synthetic and watering actions are virtual. The application does not control a physical pump.
 
-The screenshot above shows the local dashboard populated with synthetic readings from the running API.
-
-## Architecture.    
+## ☁️ Cloud Architecture
 
 ```mermaid
 flowchart LR
-  SIM[Python sensor simulator] -->|HTTPS / REST JSON| API[FastAPI service]
-  API --> DB[(SQLite locally<br/>Supabase PostgreSQL in cloud)]
-  API --> RULES[Threshold decision + alerts]
-  UI[React + TypeScript dashboard] -->|REST polling| API
-  RULES --> EVENTS[Virtual watering events]
-  EVENTS --> DB
+    SIM[Python sensor simulator] -->|REST JSON| API[FastAPI service]
+    UI[React + TypeScript dashboard] -->|REST polling| API
+    API --> DB[(SQLite locally<br/>Supabase PostgreSQL in cloud)]
+    API --> RULES[Moisture threshold rules]
+    RULES --> ALERTS[Alerts and virtual watering events]
+    ALERTS --> DB
 ```
 
-## Features
+### Cloud service mapping
 
-- Configurable synthetic soil moisture, temperature, humidity, and light readings
-- Retry-aware simulator that registers the demo device automatically
-- FastAPI REST service with request validation and OpenAPI docs
-- SQLite for local development; Supabase PostgreSQL for cloud persistence
-- Moisture-based watering decisions and alert/event history
-- Responsive React + TypeScript dashboard with a live-updating chart
-- Adjustable plant moisture threshold
-- Docker Compose deployment for API, dashboard, and simulator
+| Layer | Local demonstration | Cloud option |
+| --- | --- | --- |
+| Dashboard | React app served through Docker/Nginx | Render static site |
+| API | FastAPI container | Render Docker web service |
+| Database | SQLite with a persistent Docker volume | Supabase managed PostgreSQL |
+| Sensor input | Python simulator | Simulator or a future ESP32 client |
+| Actuation | Virtual watering records only | No physical pump integration is included |
+
+The browser communicates with FastAPI; database credentials remain on the server side. The cloud database is optional, and the local setup does not require a cloud account.
+
+## 🚀 Key Features
+
+- Synthetic soil moisture, temperature, humidity, and light readings
+- Simulator that registers a demo device and retries transient API requests
+- Versioned FastAPI endpoints with request validation and interactive OpenAPI documentation
+- SQLite persistence locally and optional Supabase PostgreSQL persistence
+- Configurable moisture threshold with automatic rule evaluation
+- Alert and virtual watering-event history
+- Responsive React and TypeScript dashboard with selectable sensor history
+- Docker Compose services for the API, dashboard, and simulator
 - GitHub Actions checks for backend tests and frontend production build
-- Optional ESP32/sensor extension path
+- Documented path for a future ESP32 and sensor extension
 
-## Quick start: Docker (recommended)
+## 📸 Project Screenshots
 
-Requirements: Docker Desktop with Compose enabled.
+### Dashboard Overview
+
+The dashboard brings together plant status, live sensor metrics, moisture history, care settings, alerts, and virtual watering activity.
+
+![Plant monitoring dashboard with synthetic sensor readings and watering activity](screenshots/01_dashboard_overview.png)
+
+The image is a local demo populated by the running API and simulator.
+
+## 🧰 Technology Stack
+
+| Area | Technologies |
+| --- | --- |
+| Backend API | Python 3.12+, FastAPI, Pydantic, SQLAlchemy |
+| Frontend | React 18, TypeScript, Vite, Recharts, Lucide |
+| Data | SQLite locally; Supabase PostgreSQL optionally |
+| Runtime and web serving | Docker Compose, Docker, Nginx |
+| Testing and automation | pytest, TypeScript build checks, Vite production build, GitHub Actions |
+
+## 📦 Quick Start: Docker
+
+### Prerequisites
+
+- Docker Desktop with Docker Compose enabled
+
+### Start the application
+
+Run these commands from the repository root in PowerShell:
 
 ```powershell
 Copy-Item .env.example .env
 docker compose up --build
 ```
 
-Open:
+Open the local services:
 
-- Dashboard: [http://localhost:8081](http://localhost:8081)
-- API docs: [http://localhost:8000/docs](http://localhost:8000/docs)
-- Health check: [http://localhost:8000/api/v1/health](http://localhost:8000/api/v1/health)
+- **Dashboard:** [http://localhost:8081](http://localhost:8081)
+- **Interactive API documentation:** [http://localhost:8000/docs](http://localhost:8000/docs)
+- **API health check:** [http://localhost:8000/api/v1/health](http://localhost:8000/api/v1/health)
 
-The simulator creates `PLANT-001`, sends a reading every 10 seconds, and writes to the named `plant-data` Docker volume. Stop with `Ctrl+C`; run `docker compose down` to stop services while preserving data. `docker compose down -v` also removes the local database volume.
+The simulator registers `PLANT-001` and sends a reading every 10 seconds. Data is stored in the named `plant-data` Docker volume. Press `Ctrl+C` to stop Compose; `docker compose down` stops services while preserving data. `docker compose down -v` also removes the local database volume.
 
-## Deploy to Render
+## 🖥️ Run Without Docker
 
-The [`verdant.yaml`](verdant.yaml) Blueprint creates a Docker API service and a static React dashboard. In Render's Blueprint form, enter `verdant.yaml` as the Blueprint path. Because the API needs persistent cloud storage, set up Supabase first, then deploy the Blueprint from your GitHub repository in Render:
-
-1. Set the API service's `DATABASE_URL` to the Supabase PostgreSQL connection URL (use the TLS URL).
-2. Set `CORS_ORIGINS` to the deployed dashboard URL, e.g. `https://smart-plant-dashboard.onrender.com`.
-3. Set the dashboard's `VITE_API_BASE_URL` to the deployed API URL plus `/api/v1`, e.g. `https://smart-plant-api.onrender.com/api/v1`.
-4. Redeploy the dashboard after setting its build-time environment variable.
-5. Check `https://<api-host>/api/v1/health`, then open the dashboard URL.
-
-Set these values in Render's environment-variable settings. Do not commit the Supabase connection URL to the repository or paste it into frontend variables. See [`docs/cloud-deployment.md`](docs/cloud-deployment.md) for Supabase setup and security details.
-
-## Run without Docker
-
-### Backend
+### Start the backend
 
 ```powershell
 cd backend
@@ -83,9 +108,9 @@ pip install -r requirements.txt
 python -m app.main
 ```
 
-### React dashboard
+### Start the React dashboard
 
-Open a second terminal:
+In a second terminal:
 
 ```powershell
 cd frontend\react-app
@@ -93,55 +118,61 @@ npm ci
 & .\node_modules\.bin\vite.cmd --host 0.0.0.0
 ```
 
-Open the Vite URL printed in the terminal (normally [http://localhost:5173](http://localhost:5173)). Vite proxies `/api` requests to `http://localhost:8000`.
+Open the Vite URL shown in the terminal, normally [http://localhost:5173](http://localhost:5173). Vite proxies `/api` requests to `http://localhost:8000`.
 
-### Sensor simulator
+### Start the sensor simulator
 
-Open a third terminal:
+In a third terminal, from the repository root:
 
 ```powershell
 py -m pip install httpx
 py simulator\sensor_simulator.py --interval 10
 ```
 
-The simulator registers `PLANT-001` on the first run. To generate local log output without an API, add `--offline`. Use `--device-id PLANT-002` to create another virtual plant.
+The simulator registers `PLANT-001` on its first run. Add `--device-id PLANT-002` to register another virtual plant. Use `--offline` to generate local log output without an API.
 
-The original static dashboard remains available at [frontend/index.html](frontend/index.html). To use it, serve the `frontend` directory with `py -m http.server 8080` from that directory and open [http://localhost:8080](http://localhost:8080). The React application is the recommended UI.
+The legacy static dashboard is also available at [frontend/index.html](frontend/index.html). To serve it, run `py -m http.server 8080` from the `frontend` directory and open [http://localhost:8080](http://localhost:8080). The React dashboard is the recommended interface.
 
-## Supabase cloud database
+## 🗄️ Supabase Cloud Database
 
-Supabase provides managed PostgreSQL storage; the FastAPI service remains the trusted API layer. The browser talks only to FastAPI, not directly to Supabase.
+Supabase provides managed PostgreSQL storage while FastAPI remains the trusted API layer. The browser does not connect directly to Supabase.
 
 1. Create a Supabase project and open **SQL Editor**.
 2. Run [`supabase/schema.sql`](supabase/schema.sql) to create the tables and indexes.
-3. Copy the project’s PostgreSQL connection string from **Project Settings → Database**. Prefer the session pooler for app hosting where required, and use its TLS-enabled connection string.
-4. Put it in a private root `.env` file. Do not commit that file:
+3. Copy the PostgreSQL connection URL from **Project Settings → Database**. Use the TLS-enabled connection details and the session pooler when required by the hosting provider.
+4. Store the URL in a private root `.env` file as `DATABASE_URL`. Set `CORS_ORIGINS` to the exact dashboard origin. Do not commit `.env`.
+5. Start the services with Docker Compose. The backend connects to PostgreSQL using the server-side URL.
 
-   ```dotenv
-   DATABASE_URL=postgresql://postgres.<project-ref>:<password>@<pooler-host>:5432/postgres?sslmode=require
-   CORS_ORIGINS=https://your-dashboard.example
-   ```
+For local SQLite, keep the example database URL in `.env`. See [`docs/cloud-deployment.md`](docs/cloud-deployment.md) for connection and deployment details.
 
-5. Start the app with Docker Compose. The backend normalizes `postgresql://` to the psycopg 3 driver and connects to Supabase. Keep the database password server-side and rotate it if exposed.
+## 🌐 Render Deployment
 
-For a local SQLite setup, leave the example `DATABASE_URL` in `.env`. The included schema mirrors the SQLAlchemy model tables. See [`docs/cloud-deployment.md`](docs/cloud-deployment.md) for deployment and connection troubleshooting.
+The [`verdant.yaml`](verdant.yaml) Blueprint defines a Docker API service and a static React dashboard. Configure these values in Render's environment settings before deploying:
 
-## API overview
+- API `DATABASE_URL`: Supabase PostgreSQL connection URL with TLS
+- API `CORS_ORIGINS`: exact deployed dashboard origin
+- Dashboard `VITE_API_BASE_URL`: deployed API origin followed by `/api/v1`
+
+Redeploy the dashboard after changing its build-time API URL. Verify the API at `https://<api-host>/api/v1/health`, then open the dashboard URL. Never place database credentials in frontend variables. Full instructions are in [`docs/cloud-deployment.md`](docs/cloud-deployment.md).
+
+## 📡 REST API
+
+Interactive OpenAPI documentation is available at `/docs` while the backend is running.
 
 | Method | Route | Purpose |
-|---|---|---|
-| `GET` | `/api/v1/health` | Liveness check |
-| `GET`, `POST` | `/api/v1/devices` | List and register devices |
-| `GET`, `PATCH` | `/api/v1/devices/{device_id}` | View/update plant metadata and threshold |
-| `POST` | `/api/v1/sensor-readings` | Ingest validated sensor data |
-| `GET` | `/api/v1/sensor-readings/{device_id}?limit=100` | Read history |
-| `GET`, `POST` | `/api/v1/watering-events/{device_id}` | Read/create virtual watering events |
+| --- | --- | --- |
+| `GET` | `/api/v1/health` | Check API liveness |
+| `GET`, `POST` | `/api/v1/devices` | List or register devices |
+| `GET`, `PATCH` | `/api/v1/devices/{device_id}` | Read or update plant metadata and threshold |
+| `POST` | `/api/v1/sensor-readings` | Submit a validated sensor reading |
+| `GET` | `/api/v1/sensor-readings/{device_id}?limit=100` | Read sensor history |
+| `GET`, `POST` | `/api/v1/watering-events/{device_id}` | Read or create virtual watering events |
 | `GET` | `/api/v1/alerts/{device_id}` | Read alerts |
-| `GET` | `/api/v1/dashboard/{device_id}` | Dashboard summary |
+| `GET` | `/api/v1/dashboard/{device_id}` | Read the dashboard summary |
 
-Interactive OpenAPI docs are served at `/docs` while the backend is running.
+## 🧪 Data Model and Watering Rule
 
-## Data model
+The service stores device metadata, sensor readings, watering events, and alerts. Sensor input is validated by the API.
 
 ```json
 {
@@ -154,9 +185,11 @@ Interactive OpenAPI docs are served at `/docs` while the backend is running.
 }
 ```
 
-The service stores devices, sensor readings, watering events, and alerts. Moisture and environmental values are validated at the API boundary. A reading below the plant’s configured threshold activates the watering decision when automatic watering is enabled.
+When automatic watering is enabled, a reading below the configured moisture threshold records the applicable decision, alert, and virtual event. No physical watering occurs.
 
-## Testing and quality checks
+## ✅ Tests and Quality Checks
+
+Run the backend tests and frontend checks from the repository root:
 
 ```powershell
 python -m pip install -r backend\requirements.txt
@@ -167,33 +200,30 @@ node .\node_modules\typescript\bin\tsc -b
 if ($?) { node .\node_modules\vite\bin\vite.js build }
 ```
 
-Docker configuration can be checked with `docker compose config`; build and launch the full integration with `docker compose up --build`. The direct Node/Vite PowerShell commands avoid Windows shell parsing issues when the project is in a directory containing `&`.
+Validate Docker Compose configuration with `docker compose config`. The CI workflow is in [`.github/workflows/ci.yml`](.github/workflows/ci.yml).
 
-## Security and deployment notes
+## 🔐 Security, Scope, and Limitations
 
-- This is an educational demo, not a production-ready public irrigation service.
-- The API currently has no user/device authentication. Keep it local or behind a trusted access layer; add identity, authorization, rate limits, and device credentials before public deployment.
-- `DATABASE_URL` is a server secret. Never put it, a Supabase service-role key, or a database password in `VITE_*` frontend variables.
-- Set `CORS_ORIGINS` to the exact deployed dashboard origin(s). CORS is not an authentication mechanism.
-- Use TLS for public traffic, a managed database backup policy, and retention/cleanup for high-volume readings.
-- The simulator and REST flow use synthetic/demo values only.
+- This is an educational demo, not a production-ready irrigation service.
+- The API does not currently authenticate users or devices. Keep it local or behind a trusted access layer until authentication, authorization, rate limits, and device credentials are added.
+- Treat `DATABASE_URL` as a server secret. Never expose it, a Supabase service-role key, or a database password in frontend `VITE_*` variables.
+- Set `CORS_ORIGINS` to the exact dashboard origin. CORS is not an authentication mechanism.
+- Use TLS for public traffic, configure database backups, and define data retention before collecting high-volume readings.
+- The simulator and REST workflow use synthetic/demo values only.
 
-## Optional hardware extension
+## 🔌 Optional Hardware Extension
 
-Replace the Python simulator with an ESP32 connected to a capacitive soil moisture probe and a DHT22/SHT31 sensor. Send HTTPS requests in the same JSON format. A physical relay/pump needs electrical isolation, a safe power supply, dry-run protection, and a hardware-side maximum run-time cutoff. Keep the actuator disabled until validated independently.
+The simulator can be replaced by an ESP32 with a capacitive soil-moisture probe and a DHT22/SHT31 sensor using the same JSON API format. A physical relay or pump requires electrical isolation, a safe power supply, dry-run protection, and a hardware-side maximum run-time cutoff. Keep physical actuation disabled until independently validated.
 
-## GitHub portfolio checklist
+## 🎓 Project and Portfolio Resources
 
-1. Create a public repository with this README and a short repository description.
-2. Add a genuine dashboard screenshot in `docs/screenshots/dashboard.png`.
-3. Enable GitHub Actions and confirm the CI workflow passes.
-4. In the repository About section, add `iot`, `cloud-computing`, `fastapi`, `react`, `supabase`, and `docker`.
-5. Link to the architecture/report and include a short demo video or deployment URL if available.
-6. Never publish `.env`, database credentials, or real personal data.
+- [Project report](docs/project-report.md)
+- [Architecture overview](docs/architecture.md)
+- [Cloud deployment guide](docs/cloud-deployment.md)
+- [GitHub portfolio checklist](docs/github-portfolio.md)
 
-See [`docs/github-portfolio.md`](docs/github-portfolio.md), [`docs/project-report.md`](docs/project-report.md), and [`docs/architecture.md`](docs/architecture.md).
+For a portfolio repository, add a genuine dashboard screenshot, confirm the GitHub Actions workflow passes, and include the tags `iot`, `cloud-computing`, `fastapi`, `react`, `supabase`, and `docker`. Do not publish `.env`, database credentials, or real personal data.
 
-## License
+## ⚖️ License
 
 MIT. See [LICENSE](LICENSE).
-     
