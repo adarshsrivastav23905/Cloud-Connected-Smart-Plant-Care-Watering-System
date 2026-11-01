@@ -11,7 +11,7 @@
 ## 📌 Executive Summary
    
 Plant care can be difficult to manage consistently, especially when growing conditions are not visible remotely. This project demonstrates an IoT-to-cloud workflow that simulates plant sensor readings, sends them to a REST API, stores time-series data, and evaluates moisture thresholds. A React dashboard presents current conditions, history, alerts, and virtual watering activity.
-
+   
 The complete demo runs locally without physical hardware. SQLite is used by default, and Supabase-hosted PostgreSQL is available for cloud persistence.
 
 > **Demo scope:** Sensor readings are synthetic and watering actions are virtual. The application does not control a physical pump.
